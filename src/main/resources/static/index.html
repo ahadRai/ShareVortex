@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>ShareVortex</title>
+</head>
+<body>
+<h1>Welcome to ShareVortex</h1>
+
+<h2>Send File</h2>
+<form id="sendForm" enctype="multipart/form-data">
+    <input type="file" id="file" name="file" required />
+    <button type="submit">Send</button>
+</form>
+
+<div id="sendInfo" style="display:none;">
+    <p>Share this link or token:</p>
+    <p id="shareLink"></p>
+    <p id="shareToken"></p>
+</div>
+
+<hr />
+
+<h2>Receive File</h2>
+<form id="receiveForm">
+    <input type="text" id="tokenInput" placeholder="Enter token" required />
+    <button type="submit">Receive</button>
+</form>
+
+<script>
+    document.getElementById('sendForm').onsubmit = async function(e) {
+      e.preventDefault();
+      const formData = new FormData();
+      formData.append("file", document.getElementById("file").files[0]);
+
+      const res = await fetch('/api/send', {
+        method: 'POST',
+        body: formData
+      });
+
+      const data = await res.json();
+      document.getElementById('shareLink').textContent = window.location.origin + "/receive/" + data.token;
+      document.getElementById('shareToken').textContent = data.token;
+      document.getElementById('sendInfo').style.display = 'block';
+    };
+
+    document.getElementById('receiveForm').onsubmit = function(e) {
+      e.preventDefault();
+      const token = document.getElementById("tokenInput").value;
+      window.location.href = "/receive/" + token;
+    };
+</script>
+</body>
+</html>
