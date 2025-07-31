@@ -1,17 +1,15 @@
-# Use a small JDK 21 base image
-FROM eclipse-temurin:21-jdk-alpine
+# -------- Stage 1: Build the application --------
+FROM maven:3.9.5-eclipse-temurin-21 AS build
+WORKDIR /app
+COPY . .
+RUN mvn clean package -DskipTests
 
-# Set the working directory inside the container
+# -------- Stage 2: Run the built JAR --------
+FROM eclipse-temurin:21-jdk-alpine
 WORKDIR /app
 
-# Copy everything into the container
-COPY . .
+# Copy only the final JAR from the builder stage
+COPY --from=build /app/target/*.jar app.jar
 
-# Build the project (skip tests for speed)
-RUN ./mvnw clean package -DskipTests
-
-# Expose Spring Boot port
 EXPOSE 8080
-
-# Run the jar file
-CMD ["java", "-jar", "target/sharevortex-0.0.1-SNAPSHOT.jar"]
+CMD ["java", "-jar", "app.jar"]
