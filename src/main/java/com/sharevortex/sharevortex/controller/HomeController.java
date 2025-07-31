@@ -6,6 +6,7 @@ import com.sharevortex.sharevortex.service.SessionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.InputStreamResource;
 import org.springframework.http.*;
+import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -35,6 +36,16 @@ public class HomeController {
                 .headers(headers)
                 .contentType(MediaType.APPLICATION_OCTET_STREAM)
                 .body(new InputStreamResource(inputStream));
+    }
+}
+
+@Controller
+class WebController {
+    
+    @GetMapping("/receive/{token}")
+    public String receiveFile(@PathVariable String token) {
+        // Redirect to the API stream endpoint
+        return "redirect:/api/stream/" + token;
     }
 }
 
