@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ShareVortex - Secure File Sharing</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 10px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        h2 {
+            color: #555;
+            border-bottom: 2px solid #007bff;
+            padding-bottom: 10px;
+        }
+        .form-group {
+            margin-bottom: 20px;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: #555;
+        }
+        input[type="file"], input[type="text"] {
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #ddd;
+            border-radius: 5px;
+            font-size: 16px;
+        }
+        button {
+            background-color: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            transition: background-color 0.3s;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        button:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+        .info-box {
+            background-color: #e7f3ff;
+            border: 1px solid #b3d9ff;
+            border-radius: 5px;
+            padding: 15px;
+            margin: 20px 0;
+            display: none;
+        }
+        .share-link {
+            background-color: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 5px;
+            padding: 10px;
+            margin: 10px 0;
+            word-break: break-all;
+            font-family: monospace;
+        }
+        .error {
+            background-color: #f8d7da;
+            border: 1px solid #f5c6cb;
+            color: #721c24;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        .success {
+            background-color: #d4edda;
+            border: 1px solid #c3e6cb;
+            color: #155724;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+        hr {
+            border: none;
+            border-top: 2px solid #eee;
+            margin: 30px 0;
+        }
+        .loading {
+            display: none;
+            text-align: center;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🚀 ShareVortex</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">Secure and simple file sharing</p>
+
+        <h2>📤 Send File</h2>
+        <form id="sendForm" enctype="multipart/form-data">
+            <div class="form-group">
+                <label for="file">Select file to share:</label>
+                <input type="file" id="file" name="file" required />
+            </div>
+            <button type="submit" id="sendButton">Send File</button>
+        </form>
+
+        <div class="loading" id="sendLoading">
+            <p>Uploading file...</p>
+        </div>
+
+        <div class="error" id="sendError"></div>
+        <div class="success" id="sendSuccess"></div>
+
+        <div class="info-box" id="sendInfo">
+            <h3>✅ File uploaded successfully!</h3>
+            <p><strong>Share this link:</strong></p>
+            <div class="share-link" id="shareLink"></div>
+            <p><strong>Or share this token:</strong></p>
+            <div class="share-link" id="shareToken"></div>
+            <button onclick="copyToClipboard()">Copy Link</button>
+        </div>
+
+        <hr />
+
+        <h2>📥 Receive File</h2>
+        <form id="receiveForm">
+            <div class="form-group">
+                <label for="tokenInput">Enter token:</label>
+                <input type="text" id="tokenInput" placeholder="Enter the token you received" required />
+            </div>
+            <button type="submit" id="receiveButton">Receive File</button>
+        </form>
+
+        <div class="loading" id="receiveLoading">
+            <p>Checking token...</p>
+        </div>
+
+        <div class="error" id="receiveError"></div>
+    </div>
+
+    <script>
+        function showError(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+
+        function showSuccess(elementId, message) {
+            const element = document.getElementById(elementId);
+            element.textContent = message;
+            element.style.display = 'block';
+            setTimeout(() => {
+                element.style.display = 'none';
+            }, 5000);
+        }
+
+        function copyToClipboard() {
+            const linkElement = document.getElementById('shareLink');
+            const text = linkElement.textContent;
+            
+            navigator.clipboard.writeText(text).then(() => {
+                showSuccess('sendSuccess', 'Link copied to clipboard!');
+            }).catch(() => {
+                // Fallback for older browsers
+                const textArea = document.createElement('textarea');
+                textArea.value = text;
+                document.body.appendChild(textArea);
+                textArea.select();
+                document.execCommand('copy');
+                document.body.removeChild(textArea);
+                showSuccess('sendSuccess', 'Link copied to clipboard!');
+            });
+        }
+
+        document.getElementById('sendForm').onsubmit = async function(e) {
+            e.preventDefault();
+            
+            const fileInput = document.getElementById('file');
+            const sendButton = document.getElementById('sendButton');
+            const sendLoading = document.getElementById('sendLoading');
+            const sendInfo = document.getElementById('sendInfo');
+            
+            if (!fileInput.files[0]) {
+                showError('sendError', 'Please select a file to upload');
+                return;
+            }
+
+            // Show loading state
+            sendButton.disabled = true;
+            sendLoading.style.display = 'block';
+            sendInfo.style.display = 'none';
+            document.getElementById('sendError').style.display = 'none';
+
+            try {
+                const formData = new FormData();
+                formData.append("file", fileInput.files[0]);
+
+                const response = await fetch('/api/send', {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    throw new Error(errorText || 'Upload failed');
+                }
+
+                const data = await response.json();
+                
+                // Display success info
+                document.getElementById('shareLink').textContent = window.location.origin + "/receive/" + data.token;
+                document.getElementById('shareToken').textContent = data.token;
+                sendInfo.style.display = 'block';
+                
+                showSuccess('sendSuccess', 'File uploaded successfully!');
+                
+            } catch (error) {
+                console.error('Upload error:', error);
+                showError('sendError', 'Upload failed: ' + error.message);
+            } finally {
+                sendButton.disabled = false;
+                sendLoading.style.display = 'none';
+            }
+        };
+
+        document.getElementById('receiveForm').onsubmit = async function(e) {
+            e.preventDefault();
+            
+            const tokenInput = document.getElementById('tokenInput');
+            const receiveButton = document.getElementById('receiveButton');
+            const receiveLoading = document.getElementById('receiveLoading');
+            
+            const token = tokenInput.value.trim();
+            
+            if (!token) {
+                showError('receiveError', 'Please enter a token');
+                return;
+            }
+
+            // Show loading state
+            receiveButton.disabled = true;
+            receiveLoading.style.display = 'block';
+            document.getElementById('receiveError').style.display = 'none';
+
+            try {
+                // First check if the token exists
+                const checkResponse = await fetch(`/api/stream/${token}`, {
+                    method: 'HEAD'
+                });
+                
+                if (checkResponse.status === 404) {
+                    throw new Error('File not found or token has expired');
+                }
+                
+                // If token exists, redirect to download
+                window.location.href = "/receive/" + token;
+                
+            } catch (error) {
+                console.error('Receive error:', error);
+                showError('receiveError', error.message);
+            } finally {
+                receiveButton.disabled = false;
+                receiveLoading.style.display = 'none';
+            }
+        };
+    </script>
+</body>
+</html> 
