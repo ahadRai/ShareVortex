@@ -16,12 +16,12 @@ public class SessionService {
     private static final Logger logger = LoggerFactory.getLogger(SessionService.class);
     private final Map<String, SessionData> sessions = new ConcurrentHashMap<>();
 
-    private static class SessionData {
-        final byte[] data;
-        final String filename;
-        final String contentType;
+    public static class SessionData {
+        public final byte[] data;
+        public final String filename;
+        public final String contentType;
         
-        SessionData(byte[] data, String filename, String contentType) {
+        public SessionData(byte[] data, String filename, String contentType) {
             this.data = data;
             this.filename = filename;
             this.contentType = contentType;
@@ -54,6 +54,15 @@ public class SessionService {
         
         logger.info("Retrieved session for token: {} ({} bytes)", token, sessionData.data.length);
         return new ByteArrayInputStream(sessionData.data);
+    }
+    
+    public SessionData getSessionData(String token) {
+        return sessions.get(token);
+    }
+    
+    public void removeSession(String token) {
+        sessions.remove(token);
+        logger.info("Removed session for token: {}", token);
     }
     
     public boolean hasSession(String token) {

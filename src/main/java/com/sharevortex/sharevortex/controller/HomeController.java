@@ -51,25 +51,40 @@ public class HomeController {
         try {
             logger.info("Stream request for token: {}", token);
             
-            InputStream inputStream = sessionService.getStream(token);
-            if (inputStream == null) {
+            SessionService.SessionData sessionData = sessionService.getSessionData(token);
+            if (sessionData == null) {
                 logger.warn("Token not found or expired: {}", token);
                 return ResponseEntity.status(HttpStatus.NOT_FOUND)
                         .body("File not found or token expired");
             }
 
             HttpHeaders headers = new HttpHeaders();
-            headers.add("Content-Disposition", "attachment; filename=sharedfile");
+            String filename = sessionData.filename != null ? sessionData.filename : "sharedfile";
+            headers.add("Content-Disposition", "attachment; filename=\"" + filename + "\"");
             headers.add("Cache-Control", "no-cache, no-store, must-revalidate");
             headers.add("Pragma", "no-cache");
             headers.add("Expires", "0");
             
-            logger.info("Streaming file for token: {}", token);
+            // Set proper content type
+            MediaType contentType = MediaType.APPLICATION_OCTET_STREAM;
+            if (sessionData.contentType != null) {
+                try {
+                    contentType = MediaType.parseMediaType(sessionData.contentType);
+                } catch (Exception e) {
+                    logger.warn("Could not parse content type: {}", sessionData.contentType);
+                }
+            }
+            
+            logger.info("Streaming file for token: {} (filename: {}, content-type: {})", 
+                       token, filename, contentType);
+            
+            // Remove the session after streaming (single-use)
+            sessionService.removeSession(token);
             
             return ResponseEntity.ok()
                     .headers(headers)
-                    .contentType(MediaType.APPLICATION_OCTET_STREAM)
-                    .body(new InputStreamResource(inputStream));
+                    .contentType(contentType)
+                    .body(new InputStreamResource(new ByteArrayInputStream(sessionData.data)));
         } catch (Exception e) {
             logger.error("Error streaming file for token: {}", token, e);
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)

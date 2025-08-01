@@ -33,7 +33,7 @@ class WebController {
             return "error";
         }
         
-        // Redirect to the API stream endpoint
+        // Redirect to the API stream endpoint for direct download
         logger.info("Redirecting to stream for token: {}", token);
         return "redirect:/api/stream/" + token;
     }

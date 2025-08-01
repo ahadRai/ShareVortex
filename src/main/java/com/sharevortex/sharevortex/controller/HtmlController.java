@@ -11,6 +11,16 @@ public class HtmlController {
         return "index";
     }
     
+    @GetMapping("/send")
+    public String send() {
+        return "send";
+    }
+    
+    @GetMapping("/receive")
+    public String receive() {
+        return "receive";
+    }
+    
     @GetMapping("/error")
     public String error() {
         return "error";
